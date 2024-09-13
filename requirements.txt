@@ -1,6 +1,8 @@
+aiofiles==24.1.0
 annotated-types==0.7.0
 anyio==4.4.0
 babel==2.16.0
+bcrypt==4.2.0
 certifi==2024.8.30
 click==8.1.7
 colorama==0.4.6
@@ -13,6 +15,7 @@ httpcore==1.0.5
 httptools==0.6.1
 httpx==0.27.2
 idna==3.8
+itsdangerous==2.2.0
 Jinja2==3.1.4
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
