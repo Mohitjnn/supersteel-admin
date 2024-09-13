@@ -2,9 +2,7 @@ import mongoengine as me
 from datetime import datetime
 from enum import Enum
 from starlette.requests import Request
-from bson import ObjectId
-from pymongo import MongoClient
-from gridfs import GridFSBucket
+from bcrypt import hashpw, gensalt
 
 
 class Unit(str, Enum):
@@ -13,10 +11,20 @@ class Unit(str, Enum):
     mm = "mm"
 
 
+class WeightUnit(str, Enum):
+    kg = "kg"
+    g = "g"
+
+
 class Dimension(me.EmbeddedDocument):
     width = me.IntField(min_value=10, max_value=100)
     height = me.IntField(min_value=10, max_value=100)
     unit = me.EnumField(Unit)
+
+
+class Weight(me.EmbeddedDocument):
+    Weight = me.IntField(min_value=1)
+    unit = me.EnumField(WeightUnit)
 
 
 class Image(me.EmbeddedDocument):
@@ -31,12 +39,13 @@ class Image(me.EmbeddedDocument):
 class Product(me.Document):
     title = me.StringField(min_length=3)
     subtitle = me.StringField()
-    description = me.StringField()
+    description = me.ListField(me.StringField())
+    color = me.StringField()
     price = me.DecimalField(min_value=0.01)
     best_seller = me.BooleanField(default=False)
-    type = me.StringField()  # Example: 'Seating', 'Tables', etc.
     images = me.ListField(me.EmbeddedDocumentField(Image))  # Allows multiple images
     dimension = me.EmbeddedDocumentField(Dimension)
+    weight = me.EmbeddedDocumentField(Weight)
     created_at = me.DateTimeField(default=datetime.utcnow)
     category = me.ReferenceField("Category")
 
@@ -46,34 +55,19 @@ class Product(me.Document):
             image.id = f"Image{index + 1:02}"
         super().save(*args, **kwargs)  # Call the parent save method
 
-    def delete(self, *args, **kwargs):
-        # Connect to the MongoDB instance using PyMongo
-        client = MongoClient(
-            "mongodb+srv://jnmohit29:Mohitjn123@cluster0.lfubgwo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-        )  # Replace with your MongoDB connection string
-        db = client["furnitureProducts"]  # Replace with your database name
-        bucket = GridFSBucket(
-            db, bucket_name="images"
-        )  # Connect to the correct GridFS bucket
 
-        # Delete all associated GridFS images when the product is deleted
-        for image in self.images:
-            if image.image_src:
-                try:
-                    # Convert image.image_src from string to ObjectId
-                    file_id = ObjectId(image.image_src.get("$oid", image.image_src))
-                    # Use GridFSBucket to delete the file by its ObjectId
-                    bucket.delete(file_id)
-                    print(f"Deleted image {image.id} successfully with ID {file_id}.")
-                except Exception as e:
-                    print(
-                        f"Error deleting image {image.id} with ID {image.image_src}: {e}"
-                    )
+class Admin(me.Document):
+    username = me.StringField(required=True, unique=True)
+    password_hash = me.StringField(required=True)
 
-        # Call the parent delete method to delete the product document
-        super().delete(*args, **kwargs)
-        # Close the PyMongo client
-        client.close()
+    @classmethod
+    def create_admin(cls, username: str, password: str):
+        # Hash the password using bcrypt
+        password_hash = hashpw(password.encode("utf-8"), gensalt()).decode("utf-8")
+        # Create and save the new admin user
+        admin = cls(username=username, password_hash=password_hash)
+        admin.save()
+        return admin
 
 
 class Category(me.Document):

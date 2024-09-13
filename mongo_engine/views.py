@@ -4,7 +4,7 @@ from starlette.requests import Request
 from pymongo import MongoClient
 from gridfs import GridFSBucket
 from bson import ObjectId
-from mongo_engine.models import Product
+from mongo_engine.models.models import Product
 import os
 from dotenv import load_dotenv
 
@@ -20,11 +20,13 @@ class ProductView(ModelView):
         "id",
         "title",
         "subtitle",
+        "color",
         "description",
         "price",
         "best_seller",
         "images",
         "dimension",
+        "weight",
         "created_at",
         "category",
     ]
