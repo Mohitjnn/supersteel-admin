@@ -20,6 +20,11 @@ class ImageModel(BaseModel):
     id: str
     image_src: str  # This will store the actual image URL from GridFS (excluding the thumbnail)
 
+class BestSellerModel(BaseModel):
+    title: str
+    price: float
+    images: List[ImageModel]
+
 
 class ProductSummaryModel(BaseModel):
     title: str

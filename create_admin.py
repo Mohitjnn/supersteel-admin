@@ -1,5 +1,5 @@
-from mongo_engine.models.models import Admin
 from mongoengine import connect
+from mongo_engine.models.models import Admin
 from bcrypt import hashpw, gensalt
 from dotenv import load_dotenv
 import os

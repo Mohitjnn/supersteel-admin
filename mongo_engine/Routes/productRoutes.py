@@ -7,6 +7,7 @@ from bson import ObjectId
 from mongo_engine.models.pydantic_models import (
     ProductModel,
     ProductSummaryModel,
+BestSellerModel
 )
 from mongo_engine.db import get_db
 
@@ -98,18 +99,28 @@ async def get_product(product_name: str, base_url: str = BASE_URL):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/bestsellers", response_model=List[ProductModel])
+@router.get("/bestsellers", response_model=List[BestSellerModel])
 async def get_bestsellers(base_url: str = BASE_URL):
     """
-    Get all products marked as bestsellers (best_seller: true).
+    Get all products marked as bestsellers (best_seller: true), returning only
+    title, price, and the first image for scalability.
     """
     try:
         db = get_db()
-        # Query the products collection for bestsellers
-        cursor = db.product.find({"best_seller": True})
+
+        # Query the products collection for bestsellers, fetching only the necessary fields
+        cursor = db.product.find(
+            {"best_seller": True},
+            {
+                "title": 1,             # Only fetch the title
+                "price": 1,             # Only fetch the price
+                "images": {"$slice": 1}  # Fetch only the first image
+            }
+        )
 
         # Serialize the products with the base_url for image handling
         bestsellers = serialize_list(cursor, base_url, db)
         return bestsellers
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
