@@ -29,6 +29,7 @@ class ProductView(ModelView):
         "weight",
         "created_at",
         "category",
+        "variant",
     ]
     exclude_fields_from_list = [
         "description",
@@ -72,8 +73,8 @@ class ProductView(ModelView):
 
 
 class CategoryView(ModelView):
-    fields = ["name", "id", "description", "images"]
-    exclude_fields_from_list = ["images"]
+    fields = ["id", "name", "description", "images", "variants"]
+    exclude_fields_from_list = ["images", "description"]
     fields_default_sort = ["name"]
 
     def can_delete(self, request: Request) -> bool:

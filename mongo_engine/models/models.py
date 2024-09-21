@@ -48,6 +48,7 @@ class Product(me.Document):
     weight = me.EmbeddedDocumentField(Weight)
     created_at = me.DateTimeField(default=datetime.utcnow)
     category = me.ReferenceField("Category")
+    variant = me.StringField()
 
     def save(self, *args, **kwargs):
         # Generate IDs for images in the format "Image01", "Image02", ...
@@ -74,6 +75,7 @@ class Category(me.Document):
     name = me.StringField(min_length=3, unique=True)
     description = me.StringField(min_length=3)
     images = me.ListField(me.EmbeddedDocumentField(Image), max_length=3)
+    variants = me.ListField(me.StringField())
 
     def __admin_repr__(self, request: Request):
         return self.name
