@@ -19,6 +19,8 @@ MONGO_URL = os.environ.get("MONGO_URL")
 ORIGIN_URL = os.environ.get("ORIGIN_NAME")
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
+print(ORIGIN_URL)
+
 # from app.config import config
 from mongo_engine.models.models import Product, Category
 from mongo_engine.views import CategoryView, ProductView
@@ -55,7 +57,8 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ORIGIN_URL,
+    allow_origins="http://192.168.1.108:3000/",
+    # allow_origins=ORIGIN_URL,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

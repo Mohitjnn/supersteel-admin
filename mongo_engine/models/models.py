@@ -17,8 +17,8 @@ class WeightUnit(str, Enum):
 
 
 class Dimension(me.EmbeddedDocument):
-    width = me.IntField(min_value=10, max_value=100)
-    height = me.IntField(min_value=10, max_value=100)
+    width = me.IntField(min_value=1, max_value=100)
+    height = me.IntField(min_value=1, max_value=100)
     unit = me.EnumField(Unit)
 
 
