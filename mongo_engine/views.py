@@ -75,7 +75,7 @@ class ProductView(ModelView):
 
 
 class CategoryView(ModelView):
-    fields = ["id", "name", "description", "images"]
+    fields = ["id", "name", "description", "images","variants"]
     exclude_fields_from_list = ["images", "description"]
     fields_default_sort = ["name"]
 
