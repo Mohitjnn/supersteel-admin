@@ -7,6 +7,8 @@ from bson import ObjectId
 from mongo_engine.models.models import Product
 import os
 from dotenv import load_dotenv
+from starlette_admin import RequestAction
+
 
 load_dotenv()
 
@@ -73,7 +75,7 @@ class ProductView(ModelView):
 
 
 class CategoryView(ModelView):
-    fields = ["id", "name", "description", "images", "variants"]
+    fields = ["id", "name", "description", "images"]
     exclude_fields_from_list = ["images", "description"]
     fields_default_sort = ["name"]
 

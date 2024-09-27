@@ -48,6 +48,9 @@ class ProductModel(BaseModel):
     created_at: datetime
     category: str  # Storing category ID as a string
 
+class VariantModel(BaseModel):
+    variant: str
+    Priority: int
 
 # Pydantic model for Category
 class CategoryModel(BaseModel):
@@ -55,4 +58,4 @@ class CategoryModel(BaseModel):
     name: str
     description: Optional[str] = None
     images: List[ImageModel]  # List of main images
-    variants: Optional[List[str]] = None
+    variants: Optional[List[VariantModel]] = None

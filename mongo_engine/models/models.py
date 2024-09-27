@@ -70,12 +70,16 @@ class Admin(me.Document):
         admin.save()
         return admin
 
+class Variant(me.EmbeddedDocument):
+    variant = me.StringField(required=True)
+    Priority = me.IntField(required=True)
 
 class Category(me.Document):
     name = me.StringField(min_length=3, unique=True)
     description = me.StringField(min_length=3)
     images = me.ListField(me.EmbeddedDocumentField(Image), max_length=3)
-    variants = me.ListField(me.StringField())
+    # variants = me.ListField(me.EmbeddedDocumentField(Variant))
+    variants = me.ListField(me.EmbeddedDocumentField(Variant))
 
     def __admin_repr__(self, request: Request):
         return self.name

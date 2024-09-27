@@ -43,68 +43,6 @@ def serialize_list(cursor, base_url: str, db: Database):
     return [serialize_doc(doc, base_url, db) for doc in cursor]
 
 
-@router.get("/products", response_model=List[ProductSummaryModel])
-async def get_products_by_category(
-    base_url: str = Query(default=BASE_URL, description="Base URL for image paths"),
-    category_name: Optional[str] = Query(
-        default=None, description="Name of the category to filter products"
-    ),
-    variant: Optional[str] = Query(
-        default=None, description="Variant name to filter products within the category"
-    ),
-):
-    """
-    Get products by category and optional variant.
-    If variant is not provided or doesn't exist within the category, return all products from that category.
-    """
-    try:
-        db = get_db()
-
-        query = {}
-        projection = {
-            "title": 1,
-            "subtitle": 1,
-            "images": {"$slice": 1},
-        }
-
-        if category_name:
-            # Case-insensitive search for category name
-            category = db.category.find_one(
-                {"name": {"$regex": f"^{category_name}$", "$options": "i"}}
-            )
-            if not category:
-                raise HTTPException(status_code=404, detail="Category not found")
-
-            query["category"] = category["_id"]
-
-            if variant:
-                # Check if the variant exists within the category's variants (case-insensitive)
-                category_variants = [v.lower() for v in category.get("variants", [])]
-                if variant.lower() in category_variants:
-                    query["variant"] = variant
-                else:
-                    # Variant does not exist in this category; ignore variant filter
-                    variant = None  # Optionally, notify the user
-
-        elif variant:
-            # Filter by variant across all categories (case-insensitive)
-            query["variant"] = {"$regex": f"^{variant}$", "$options": "i"}
-
-        # Execute the query with the constructed filters
-        cursor = db.product.find(query, projection)
-
-        # Serialize the list of products
-        products = serialize_list(cursor, base_url, db)
-        return products
-
-    except HTTPException as he:
-        raise he  # Re-raise HTTP exceptions to be handled by FastAPI
-    except Exception as e:
-        # Log the exception details for debugging (optional)
-        # logger.error(f"Error fetching products: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-
-
 @router.get("/products/{product_name}", response_model=ProductModel)
 async def get_product(
     product_name: str,
@@ -128,6 +66,91 @@ async def get_product(
         )  # Ensure ObjectIds are converted to strings
     except HTTPException as he:
         raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@router.get("/products", response_model=List[ProductSummaryModel])
+async def get_products_by_category(
+    base_url: str = Query(default=BASE_URL, description="Base URL for image paths"),
+    category_name: Optional[str] = Query(
+        default=None, description="Name of the category to filter products"
+    ),
+    variant: Optional[str] = Query(
+        default=None, description="Variant name to filter products within the category"
+    ),
+):
+    """
+    Get products by category and optional variant.
+    If variant is provided, return all products matching that variant.
+    If no variant is provided, return all products sorted by the priority of the variant, only if a category is mentioned.
+    If the category does not have variants, return products without sorting.
+    """
+    try:
+        db = get_db()
+
+        query = {}
+        projection = {
+            "title": 1,
+            "subtitle": 1,
+            "images": {"$slice": 1},
+            "variant": 1,
+            "category": 1,
+        }
+
+        # Step 1: Filter by Category
+        if category_name:
+            # Case-insensitive search for category name
+            category = db.category.find_one(
+                {"name": {"$regex": f"^{category_name}$", "$options": "i"}}
+            )
+
+            if not category:
+                raise HTTPException(status_code=404, detail="Category not found")
+
+            query["category"] = category["_id"]
+
+            # Fetch the variant priorities from the category
+            category_variants = category.get("variants", [])
+
+            # Step 2: If a variant is provided, filter by it
+            if variant:
+                variant_names = [v["variant"].lower() for v in category_variants]
+                if variant.lower() in variant_names:
+                    query["variant"] = variant
+                else:
+                    raise HTTPException(
+                        status_code=404, detail="Variant not found in the category"
+                    )
+
+        # Step 3: Fetch products based on query
+        cursor = db.product.find(query, projection)
+        products = serialize_list(cursor, base_url, db)
+
+        # Step 4: If category is mentioned and no variant is provided, sort by variant priority
+        if category_name and not variant:
+            if category_variants:
+                # If the category has variants, assign priority to each product based on the variant's priority
+                variant_priority_map = {
+                    v["variant"].lower(): v.get("Priority", 0)
+                    for v in category_variants
+                }
+
+                # Assign priority to each product based on the variant's priority
+                for product in products:
+                    product_variant = product.get("variant", "").lower()
+                    product["priority"] = variant_priority_map.get(product_variant, 0)
+
+                # Sort the products list by the priority field
+                products = sorted(products, key=lambda x: x.get("priority", 0))
+            else:
+                # If no variants exist for the category, return products without sorting
+                pass
+
+        # If no category_name or variant is mentioned, return products without sorting
+        return products
+
+    except HTTPException as he:
+        raise he  # Re-raise HTTP exceptions to be handled by FastAPI
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
